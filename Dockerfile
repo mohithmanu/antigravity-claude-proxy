@@ -1,19 +1,17 @@
-FROM node:20-alpine AS builder
+# Use lightweight Node image
+FROM node:20-alpine
+
+# Create app directory
 WORKDIR /app
 
+# Copy package files first (better caching)
 COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 
-COPY . ./
-RUN npm run build
+# Install dependencies
+RUN npm install --production
 
-FROM node:20-alpine AS runner
-WORKDIR /app
+# Copy rest of the project
+COPY . .
 
-LABEL org.opencontainers.image.title="Antigravity-claud-proxy"
-
-ENV NODE_ENV=production
-ENV PORT=8080
-RUN mkdir -p /root/.config/antigravity-proxy /root/.claude
-
-CMD ["npm", "start", "--", "--log"]
+# Start the proxy
+CMD ["npm", "start"]
