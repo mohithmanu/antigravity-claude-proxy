@@ -1,26 +1,19 @@
-# Use Node.js 18 or later as specified in prerequisites
-FROM node:20-alpine
-
-# Install basic dependencies for the WebUI and CLI
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files first for better caching
 COPY package*.json ./
+RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 
-# Install dependencies (including production only)
-RUN npm install --production
+COPY . ./
+RUN npm run build
 
-# Copy the rest of the application code
-COPY . .
+FROM node:20-alpine AS runner
+WORKDIR /app
 
-# Create the config directory where accounts and settings are stored
-# The app defaults to ~/.config/antigravity-proxy or ~/.claude
-RUN mkdir -p /root/.config/antigravity-proxy /root/.claude
+LABEL org.opencontainers.image.title="Antigravity-claud-proxy"
 
-# Environment variables
 ENV NODE_ENV=production
 ENV PORT=8080
+RUN mkdir -p /root/.config/antigravity-proxy /root/.claude
 
-# Start the proxy in the foreground (so the container doesn't exit)
-# Using 'npm start' or direct node call to bin/cli.js
 CMD ["npm", "start", "--", "--log"]
