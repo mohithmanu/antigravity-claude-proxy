@@ -1,16 +1,14 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
-# Copy dependency file
-COPY package.json ./
+COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+ENV NODE_OPTIONS=--max-old-space-size=2048
 
-# Copy source code
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --no-audit --no-fund
+
 COPY . .
 
-ENV PORT=8080
-
-CMD ["node", "index.js"]
+CMD ["npm","start"]
