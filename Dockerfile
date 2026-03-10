@@ -1,17 +1,16 @@
-# Use lightweight Node image
 FROM node:20-alpine
 
-# Create app directory
 WORKDIR /app
 
-# Copy package files first (better caching)
-COPY package*.json ./
+# copy dependency files first
+COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm install --production
+# install dependencies
+RUN npm ci
 
-# Copy rest of the project
+# copy rest of project
 COPY . .
 
-# Start the proxy
+ENV PORT=8080
+
 CMD ["npm", "start"]
