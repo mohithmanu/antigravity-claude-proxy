@@ -1,25 +1,26 @@
-FROM node:20-alpine AS builder
+# Use Node.js 18 or later as specified in prerequisites
+FROM node:18-slim
+
+# Install basic dependencies for the WebUI and CLI
 WORKDIR /app
 
+# Copy package files first for better caching
 COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 
-COPY . ./
-RUN npm run build
+# Install dependencies (including production only)
+RUN npm install --production
 
-FROM node:20-alpine AS runner
-WORKDIR /app
+# Copy the rest of the application code
+COPY . .
 
-LABEL org.opencontainers.image.title="9router"
+# Create the config directory where accounts and settings are stored
+# The app defaults to ~/.config/antigravity-proxy or ~/.claude
+RUN mkdir -p /root/.config/antigravity-proxy /root/.claude
 
+# Environment variables
 ENV NODE_ENV=production
 ENV PORT=8080
-ENV HOSTNAME=0.0.0.0
 
-# Runtime writable location for localDb when DATA_DIR is configured to /app/data
-RUN mkdir -p /app/data
-
-
-EXPOSE 20128
-
-CMD ["node", "src/index.js"]
+# Start the proxy in the foreground (so the container doesn't exit)
+# Using 'npm start' or direct node call to bin/cli.js
+CMD ["npm", "start", "--", "--log"]
