@@ -2,15 +2,15 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# copy dependency files first
-COPY package.json package-lock.json* ./
+# Copy dependency file
+COPY package.json ./
 
-# install dependencies
-RUN npm ci
+# Install dependencies
+RUN npm install
 
-# copy rest of project
+# Copy source code
 COPY . .
 
 ENV PORT=8080
 
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
