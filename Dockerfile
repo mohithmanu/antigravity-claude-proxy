@@ -1,5 +1,5 @@
 # Use Node.js 18 or later as specified in prerequisites
-FROM node:22-slim
+FROM node:18-slim
 
 # Install basic dependencies for the WebUI and CLI
 WORKDIR /app
