@@ -1,19 +1,25 @@
-# Use the PLATFORM argument provided by Buildx
-FROM --platform=$BUILDPLATFORM node:18-slim AS base
-
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Explicitly set the shell to ensure path resolution
-SHELL ["/bin/sh", "-c"]
-
 COPY package*.json ./
+RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
 
-# If you have native dependencies (like node-gyp), 
-# some arm64 builds require build-essential
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+COPY . ./
+RUN npm run build
 
-RUN npm install --production
+FROM node:20-alpine AS runner
+WORKDIR /app
 
-COPY . .
+LABEL org.opencontainers.image.title="9router"
+
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
+
+# Runtime writable location for localDb when DATA_DIR is configured to /app/data
+RUN mkdir -p /app/data
+
+
+EXPOSE 20128
 
 CMD ["node", "src/index.js"]
