@@ -1,26 +1,19 @@
-# Use Node.js 18 or later as specified in prerequisites
-FROM node:18-slim
+# Use the PLATFORM argument provided by Buildx
+FROM --platform=$BUILDPLATFORM node:18-slim AS base
 
-# Install basic dependencies for the WebUI and CLI
 WORKDIR /app
 
-# Copy package files first for better caching
+# Explicitly set the shell to ensure path resolution
+SHELL ["/bin/sh", "-c"]
+
 COPY package*.json ./
 
-# Install dependencies (including production only)
+# If you have native dependencies (like node-gyp), 
+# some arm64 builds require build-essential
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
 RUN npm install --production
 
-# Copy the rest of the application code
 COPY . .
 
-# Create the config directory where accounts and settings are stored
-# The app defaults to ~/.config/antigravity-proxy or ~/.claude
-RUN mkdir -p /root/.config/antigravity-proxy /root/.claude
-
-# Environment variables
-ENV NODE_ENV=production
-ENV PORT=8080
-
-# Start the proxy in the foreground (so the container doesn't exit)
-# Using 'npm start' or direct node call to bin/cli.js
-CMD ["npm", "start", "--", "--log"]
+CMD ["node", "src/index.js"]
